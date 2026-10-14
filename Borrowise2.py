@@ -129,9 +129,9 @@ class BorrowiseApp:
         self.create_logo()
         self.create_login_form()
 
-    # ======================================================
-    # BORROWISE LOGO
-    # ======================================================
+    
+    # > BORROWISE LOGO <
+    
 
     def create_logo(self):
 
@@ -189,9 +189,9 @@ class BorrowiseApp:
             fill="#5A78A0"
         )
 
-    # ======================================================
-    # LOGIN FORM
-    # ======================================================
+    
+    # > LOGIN FORM <
+    
 
     def create_login_form(self):
 
@@ -338,9 +338,9 @@ class BorrowiseApp:
 
         self.create_account.place(x=self.center_x, y=635, anchor="center")
 
-    # ======================================================
-    # LOGIN FUNCTIONS
-    # ======================================================
+    
+    # > LOGIN FUNCTIONS <
+    
 
     def clear_username(self, event):
         if self.username_entry.get() == "Username":
@@ -384,9 +384,9 @@ class BorrowiseApp:
                 "Incorrect username or password."
             )
 
-    # ======================================================
+    
     # HELPER FOR FORM FIELD WITH EYE OPTION
-    # ======================================================
+    
 
     def build_form_field(self, parent, label_text, is_password=False):
 
@@ -447,9 +447,9 @@ class BorrowiseApp:
 
         return entry
 
-    # ======================================================
-    # CREATE ACCOUNT WINDOW (PERFECTLY ALIGNED GRID & UNIFORM SIZES)
-    # ======================================================
+    
+    # > CREATE ACCOUNT WINDOW <
+    
 
     def create_account_window(self):
 
@@ -660,9 +660,9 @@ class BorrowiseApp:
         lbl_login.pack(side="left")
         lbl_login.bind("<Button-1>", lambda event: win.destroy())
 
-    # ======================================================
-    # FORGOT PASSWORD WINDOW
-    # ======================================================
+    
+    # > FORGOT PASSWORD WINDOW <
+    
 
     def forgot_password_window(self):
 
@@ -724,9 +724,9 @@ class BorrowiseApp:
             command=reset_password
         ).pack(pady=30, ipadx=20, ipady=10)
 
-    # ======================================================
-    # USER ICON
-    # ======================================================
+    
+    # > USER ICON <
+    
 
     def create_user_icon(self, parent, x, y):
         canvas = tk.Canvas(parent, width=40, height=40, bg="white", highlightthickness=0)
@@ -734,9 +734,9 @@ class BorrowiseApp:
         canvas.create_oval(14, 3, 26, 15, fill="#557AA7", outline="")
         canvas.create_oval(7, 17, 33, 37, fill="#557AA7", outline="")
 
-    # ======================================================
-    # LOCK ICON
-    # ======================================================
+    
+    # > LOCK ICON <
+    
 
     def create_lock_icon(self, parent, x, y):
         canvas = tk.Canvas(parent, width=40, height=40, bg="white", highlightthickness=0)
@@ -749,9 +749,9 @@ class BorrowiseApp:
         canvas.create_oval(18, 21, 22, 25, fill="white", outline="")
         canvas.create_rectangle(19, 24, 21, 29, fill="white", outline="")
 
-    # ======================================================
-    # DASHBOARD
-    # ======================================================
+    
+    # > DASHBOARD <
+    
 
     def show_dashboard(self):
         for widget in self.root.winfo_children():
@@ -767,9 +767,9 @@ class BorrowiseApp:
 
         self.dashboard_home()
 
-    # ======================================================
-    # SIDEBAR
-    # ======================================================
+    
+    # > SIDEBAR <
+    
 
     def create_sidebar(self):
         self.sidebar = tk.Frame(self.main_frame, bg="#063B73", width=300)
@@ -863,9 +863,9 @@ class BorrowiseApp:
         )
         return container
 
-    # ======================================================
-    # DASHBOARD HOME
-    # ======================================================
+    
+    # > DASHBOARD HOME <
+    
 
     def dashboard_home(self):
         self.clear_content()
@@ -926,9 +926,9 @@ class BorrowiseApp:
 
         return card
 
-    # ======================================================
-    # BORROW ITEM
-    # ======================================================
+    
+    # > BORROW ITEM <
+    
 
     def show_borrow(self):
         self.clear_content()
@@ -1080,9 +1080,9 @@ class BorrowiseApp:
 
         self.status_combo.current(0)
 
-    # ======================================================
-    # CUSTOM DYNAMIC SUCCESS POPUP
-    # ======================================================
+    
+    # > THE CUSTOM DYNAMIC SUCCESS POPUP <
+    
 
     def show_success_popup(self, message="Item has been borrowed successfully."):
 
@@ -1304,9 +1304,9 @@ class BorrowiseApp:
                 bg="#F8FCFF"
             ).pack(pady=(0, 15))
 
-    # ======================================================
-    # SEARCH RECORDS
-    # ======================================================
+    
+    # SEARCH RECORDS <
+    
 
     def show_search(self):
         self.clear_content()
@@ -1407,9 +1407,9 @@ class BorrowiseApp:
                     )
                 )
 
-    # ======================================================
-    # LOGOUT
-    # ======================================================
+    
+    # LOGOUT <
+    
 
     def logout(self):
         answer = messagebox.askyesno("Logout", "Are you sure you want to logout?")
@@ -1417,9 +1417,9 @@ class BorrowiseApp:
             self.show_login()
 
 
-# ==========================================================
-# START PROGRAM
-# ==========================================================
+
+# PROGRAM END
+
 
 if __name__ == "__main__":
 

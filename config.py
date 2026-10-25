@@ -1,4 +1,4 @@
-\# ==========================================================
+# ==========================================================
 # config.py
 # Shared constants used by the whole Borrowise app.
 # No UI code lives here, only settings.

@@ -130,8 +130,9 @@ class FormRowsMixin:
             entry.delete(0, tk.END)
             entry.config(fg=self.text_blue)
 
-    def create_combo_row(self, parent, label_text, values):
+    def create_combo_row(self, parent, label_text, values, height=10):
         # MAIN COMMENT: Row with a read-only dropdown (first value selected).
+        # "height" is how many rows the dropdown list shows at once.
         row = tk.Frame(parent, bg="#F8FCFF")
         row.pack(fill="x", pady=7)
 
@@ -143,6 +144,7 @@ class FormRowsMixin:
             values=values,
             state="readonly",
             style="Borrowise.TCombobox",
+            height=height,
         )
         combo.pack(fill="x", padx=2, pady=2)
         combo.current(0)

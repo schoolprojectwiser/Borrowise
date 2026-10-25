@@ -6,7 +6,9 @@
 
 import time
 import tkinter as tk
+from tkinter import messagebox
 
+from config import PASSWORD_MAX, PASSWORD_MIN
 from password_entry import PasswordEntry
 
 
@@ -108,6 +110,7 @@ class LoginMixin:
             fg="#123F87",
             placeholder_fg=self.text_gray,
             font=("Arial", 14),
+            allow_special=True,
         )
         self.password_field.place(x=62, y=9, width=345, height=34)
 
@@ -184,6 +187,15 @@ class LoginMixin:
         # Treat the placeholder text as empty
         if id_num == "ID Number":
             id_num = ""
+
+        # Password must be 8-13 characters (this is a typing mistake, so it
+        # does NOT count as a failed attempt)
+        if len(password) < PASSWORD_MIN or len(password) > PASSWORD_MAX:
+            messagebox.showwarning(
+                "Borrowise",
+                f"Password must be {PASSWORD_MIN} to {PASSWORD_MAX} characters long.",
+            )
+            return
 
         account = self.registered_accounts.get(id_num)
 

@@ -27,6 +27,7 @@ from records import RecordsMixin
 from return_item import ReturnItemMixin
 from search import SearchMixin
 from security_answer import SecurityAnswerMixin
+from storage import load_data, write_data
 from theme import ThemeMixin
 from ui_helpers import UIHelpersMixin
 from validators import ValidationMixin
@@ -71,9 +72,9 @@ class BorrowiseApp(
         except Exception:
             pass
 
-        # ----- temporary login account -----
+        # ----- accounts + records (loaded from borrowise_data.json) -----
         # Security answer for the admin account is: blue
-        self.registered_accounts = {
+        default_accounts = {
             "03-01-2627-001668": {
                 "password": "borrowise123",
                 "fullname": "Administrator",
@@ -81,6 +82,7 @@ class BorrowiseApp(
                 "security_answer": "blue",
             }
         }
+        self.registered_accounts, self.records = load_data(default_accounts)
 
         self.current_user = {
             "id": "03-01-2627-001668",
@@ -94,19 +96,26 @@ class BorrowiseApp(
         self.lockout_popup = None
         self.lockout_message = "Incorrect ID Number or password."
 
-        # ----- borrowing records (in memory) -----
-        self.records = []
-
         # ----- feature setup -----
         self.init_colors()
         self.init_validation()
         self.init_styles()
 
+        # Make sure the JSON file exists from the first run
+        self.save_data()
+
         self.show_login()
+
+    def save_data(self):
+        # MAIN COMMENT: Writes accounts and records to the JSON file.
+        try:
+            write_data(self.registered_accounts, self.records)
+        except OSError as error:
+            from tkinter import messagebox
+            messagebox.showerror("Borrowise", f"Could not save your data.\n\n{error}")
 
 
 if __name__ == "__main__":
     root = tk.Tk()
     app = BorrowiseApp(root)
     root.mainloop()
-

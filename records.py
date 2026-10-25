@@ -132,13 +132,13 @@ class RecordsMixin:
 
         # Width (in characters) of each column
         column_widths = {
-            "ID Number": 18,
-            "Name": 18,
-            "Item": 15,
-            "Quantity": 15,
-            "Borrow Date": 13,
-            "Return Date": 13,
-            "Status": 12,
+            "ID Number": 24,
+            "Name": 24,
+            "Item": 22,
+            "Quantity": 18,
+            "Borrow Date": 19,
+            "Return Date": 19,
+            "Status": 14,
         }
 
         # Remove the old content first

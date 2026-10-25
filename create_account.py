@@ -25,7 +25,7 @@ class CreateAccountMixin:
         popup.resizable(False, False)
         popup.configure(bg="white")
         popup.transient(self.root)
-        self.center_popup(popup, 440, 700)
+        self.center_popup(popup, 440, 610)
         popup.grab_set()
 
         tk.Label(
@@ -63,10 +63,16 @@ class CreateAccountMixin:
         question_combo.pack(fill="x", padx=35, pady=(3, 10), ipady=3)
 
         self.popup_label(popup, "Security Answer:")
-        answer_entry = tk.Entry(
-            popup, font=("Arial", 12), bg="#F5FAFF", relief="solid", bd=1
+        answer_entry = PasswordEntry(
+            popup,
+            placeholder="Security answer",
+            bg="#F5FAFF",
+            font=("Arial", 12),
+            border_color="#7F9DB9",
+            border_width=1,
+            ipady=4,
         )
-        answer_entry.pack(fill="x", padx=35, pady=(3, 10), ipady=4)
+        answer_entry.pack(fill="x", padx=35, pady=(3, 10))
 
         # ----- Password + confirm password -----
         self.popup_label(popup, "Password:")
@@ -145,6 +151,7 @@ class CreateAccountMixin:
                 "security_question": question,
                 "security_answer": answer,
             }
+            self.save_data()
 
             messagebox.showinfo(
                 "Success", "Account created successfully! You can now log in.",

@@ -1,4 +1,4 @@
-# ==========================================================
+\# ==========================================================
 # config.py
 # Shared constants used by the whole Borrowise app.
 # No UI code lives here, only settings.
@@ -33,3 +33,36 @@ PASSWORD_HINT = "8-13 characters: letters, numbers, \"_\" and \"-\" only"
 
 # Date format used everywhere (MM-DD-YYYY)
 DATE_FORMAT = "%m-%d-%Y"
+
+# Item list for the Borrow page, grouped by category.
+ITEM_PLACEHOLDER = "Select item"
+
+ITEM_CATEGORIES = {
+    "Education and Media": [
+        "Laptop", "Projector", "Keyboard", "Mouse",
+        "Calculator", "Monitor", "Speaker",
+    ],
+    "Household": [
+        "Electric Fan", "Vacuum Cleaner", "Rice Cooker", "Blender",
+        "Cooler", "Air Fryer", "Microwave", "Pressure Cooker", "Steamer",
+    ],
+    "Tools and Electronics": [
+        "Electric Drill", "Hammer", "Screwdriver Set", "Wrench Set",
+        "Measuring Tape", "Pliers", "Extension Cord", "Hand Saw",
+        "Hacksaw", "Allen Key Set", "Clamps", "Vise Grips", "Heat Gun",
+        "Soldering Iron", "Shovel", "Ladder",
+    ],
+    "Sports": [
+        "Basketball", "Volleyball", "Football", "Net",
+        "Badminton Racket Set", "Tennis Rackets", "Tennis Paddles",
+        "Ping Pong Table", "Camping Tent",
+    ],
+}
+
+# Category titles are shown in the dropdown as unselectable headers.
+ITEM_HEADERS = {f"── {name} ──" for name in ITEM_CATEGORIES}
+
+ITEM_CHOICES = [ITEM_PLACEHOLDER]
+for _name, _items in ITEM_CATEGORIES.items():
+    ITEM_CHOICES.append(f"── {_name} ──")
+    ITEM_CHOICES.extend(_items)

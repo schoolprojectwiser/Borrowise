@@ -1,5 +1,5 @@
 # ==========================================================
-# borrow.py
+# This the borrow.py
 # Borrow Item page: form, validation, saving the record and
 # the success popup.
 # ==========================================================
@@ -15,7 +15,7 @@ class BorrowMixin:
     """Borrow Item feature."""
 
     def generate_next_borrower_id(self):
-        # MAIN COMMENT: Builds the next automatic borrower ID, e.g.
+        # MAIN COMMENT: Builds the next automatic borrower ID, like
         # 01-01-2627-00001, based on how many records exist.
         prefix = "01-01-2627-"
         count = len(self.records) + 1
@@ -143,6 +143,7 @@ class BorrowMixin:
         }
 
         self.records.append(record)
+        self.save_data()
         self.show_success_popup()
 
     def clear_borrow_form(self):

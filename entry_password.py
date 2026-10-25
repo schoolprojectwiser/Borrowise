@@ -1,185 +1,231 @@
 # ==========================================================
-# password_entry.py
-# Reusable password input widget with a placeholder and an
-# eye icon (closed = hidden, open = visible).
+# forgot_password.py
+# "Forgot password?" popup: reset the password of an account.
+# The user must answer the account's security question before
+# the new password is applied.
 # ==========================================================
 
+import time
 import tkinter as tk
+from tkinter import messagebox
 
-from config import PASSWORD_MAX
+from config import PASSWORD_HINT, SECURITY_QUESTIONS
+from password_entry import PasswordEntry
+from validators import check_new_password
 
 
-class PasswordEntry(tk.Frame):
-    """Entry with a placeholder and a drawn eye icon.
-    Closed eye = password hidden (dots)
-    Open eye = password visible
-    Only the icon changes when clicked.
+class ForgotPasswordMixin:
+    """Reset-password popup + security verification step."""
 
-    restrict=True -> max 13 characters, only letters/numbers/_/-,
-                      and the first letter is automatically uppercase."""
+    def open_forgot_password_window(self):
+        # MAIN COMMENT: Opens the Reset Password popup (ID Number + new
+        # password). When RESET PASSWORD is pressed, the security question
+        # popup opens; the password only changes if the answer is correct.
 
-    def __init__(
-        self,
-        parent,
-        placeholder="Password",
-        bg="white",
-        fg="#123F87",
-        placeholder_fg="#60799B",
-        font=("Arial", 12),
-        border_color=None,
-        border_width=0,
-        eye_color="#557AA7",
-        ipady=0,
-        restrict=False,
-    ):
-        # MAIN COMMENT: Builds the widget: a frame holding the text entry
-        # on the left and the eye canvas on the right.
-        super().__init__(
-            parent,
-            bg=bg,
-            highlightbackground=border_color or bg,
-            highlightcolor=border_color or bg,
-            highlightthickness=border_width,
+        # ----- window -----
+        popup = tk.Toplevel(self.root)
+        popup.title("Forgot Password")
+        popup.resizable(False, False)
+        popup.configure(bg="white")
+        popup.transient(self.root)
+        self.center_popup(popup, 420, 400)
+        popup.grab_set()
+
+        tk.Label(
+            popup, text="Reset Password", font=("Arial", 18, "bold"),
+            fg=self.dark_blue, bg="white",
+        ).pack(pady=(25, 15))
+
+        # ----- ID Number field -----
+        self.popup_label(popup, "ID Number:")
+        id_placeholder = "e.g., 03-01-2627-001668"
+        f_id = tk.Entry(
+            popup,
+            font=("Arial", 12),
+            fg=self.text_gray,
+            bg="#F5FAFF",
+            relief="solid",
+            bd=1,
+            validate="key",
+            validatecommand=self.vcmd_id,
         )
+        f_id.pack(fill="x", padx=35, pady=(5, 12), ipady=5)
+        f_id.insert(0, id_placeholder)
+        self.bind_placeholder(f_id, id_placeholder, "#123F87", self.text_gray)
 
-        # Remember the settings
-        self.placeholder = placeholder
-        self.bg = bg
-        self.fg = fg
-        self.placeholder_fg = placeholder_fg
-        self.eye_color = eye_color
-        self.hidden = True            # password starts hidden
-        self.has_placeholder = True   # placeholder is showing at start
-        self.restrict = restrict
-
-        # Eye icon (right side)
-        self.eye = tk.Canvas(
-            self, width=28, height=28, bg=bg, highlightthickness=0, cursor="hand2"
+        # ----- New password field (restricted) -----
+        self.popup_label(popup, "Enter New Password:")
+        f_pass = PasswordEntry(
+            popup,
+            placeholder="New password",
+            bg="#F5FAFF",
+            font=("Arial", 12),
+            border_color="#7F9DB9",
+            border_width=1,
+            ipady=5,
+            restrict=True,
         )
-        self.eye.pack(side="right", padx=(0, 6))
-        self.eye.bind("<Button-1>", lambda e: self.toggle())
+        f_pass.pack(fill="x", padx=35, pady=(5, 3))
+        self.popup_hint(popup, PASSWORD_HINT, pady=(0, 14))
 
-        # Key validation only when restrict=True
-        entry_options = {}
-        if restrict:
-            entry_options["validate"] = "key"
-            entry_options["validatecommand"] = (self.register(self._validate), "%P")
+        def reset_action():
+            # Validates the inputs, then asks the security question
+            acc_id = f_id.get().strip()
+            new_pass = f_pass.get().strip()
 
-        # Text entry (left side)
-        self.entry = tk.Entry(
-            self,
-            font=font,
-            bd=0,
+            if acc_id == id_placeholder:
+                acc_id = ""
+
+            # All fields are required
+            if not acc_id or not new_pass:
+                messagebox.showwarning(
+                    "Warning", "Please fill in all fields.", parent=popup
+                )
+                return
+
+            # New password must follow the rules
+            error = check_new_password(new_pass)
+            if error:
+                messagebox.showerror("Error", error, parent=popup)
+                return
+
+            account = self.registered_accounts.get(acc_id)
+
+            if not account:
+                messagebox.showerror(
+                    "Error", "ID Number is incorrect or does not exist.", parent=popup,
+                )
+                return
+
+            # Still locked out from earlier wrong attempts -> show the timer
+            if time.time() < self.lockout_until:
+                popup.destroy()
+                self.show_lockout_popup()
+                return
+
+            # Everything is fine so far -> ask the security question
+            self.open_reset_security_popup(popup, account, new_pass)
+
+        # ----- Reset button -----
+        tk.Button(
+            popup,
+            text="RESET PASSWORD",
+            font=("Arial", 11, "bold"),
+            fg="white",
+            bg=self.blue,
+            activebackground="#087DDC",
             relief="flat",
-            bg=bg,
-            fg=placeholder_fg,
-            highlightthickness=0,
-            insertbackground=fg,
-            **entry_options,
+            cursor="hand2",
+            command=reset_action,
+        ).pack(fill="x", padx=35, ipady=8)
+
+    def open_reset_security_popup(self, parent_popup, account, new_pass):
+        # MAIN COMMENT: Asks the account's security question before the
+        # password is changed. Correct answer -> password is saved.
+        # Wrong answer -> counts as a failed attempt (lockout warning popup).
+        # Cancel -> goes back to the Reset Password window.
+
+        question = account.get("security_question", SECURITY_QUESTIONS[0])
+        correct_answer = account.get("security_answer", "")
+
+        # ----- window -----
+        popup = tk.Toplevel(self.root)
+        popup.title("Security Verification")
+        popup.resizable(False, False)
+        popup.configure(bg="white")
+        popup.transient(parent_popup)
+        self.center_popup(popup, 440, 400)
+        popup.grab_set()
+
+        def cancel():
+            # Close this popup and give control back to the reset window
+            popup.destroy()
+            parent_popup.grab_set()
+
+        popup.protocol("WM_DELETE_WINDOW", cancel)
+        popup.bind("<Escape>", lambda e: cancel())
+
+        # ----- header -----
+        tk.Label(
+            popup, text="🔐", font=("Segoe UI Emoji", 32), bg="white",
+        ).pack(pady=(20, 0))
+
+        tk.Label(
+            popup, text="Security Verification",
+            font=("Arial", 18, "bold"), fg=self.dark_blue, bg="white",
+        ).pack(pady=(5, 5))
+
+        tk.Label(
+            popup, text="Answer your security question to reset the password.",
+            font=("Arial", 10), fg=self.text_gray, bg="white",
+        ).pack(pady=(0, 15))
+
+        # ----- the question (read-only text) -----
+        self.popup_label(popup, "Security Question:")
+        tk.Label(
+            popup,
+            text=question,
+            font=("Arial", 12, "bold"),
+            fg=self.dark_blue,
+            bg="#E8F4FF",
+            anchor="w",
+            padx=10,
+            pady=8,
+        ).pack(fill="x", padx=35, pady=(3, 12))
+
+        # ----- the answer (hidden by default, eye icon to reveal) -----
+        self.popup_label(popup, "Security Answer:")
+        answer_field = PasswordEntry(
+            popup,
+            placeholder="Enter your answer",
+            bg="#F5FAFF",
+            font=("Arial", 12),
+            border_color="#7F9DB9",
+            border_width=1,
+            ipady=5,
         )
-        self.entry.pack(side="left", fill="both", expand=True, padx=(8, 4), ipady=ipady)
+        answer_field.pack(fill="x", padx=35, pady=(3, 15))
 
-        # Placeholder behaviour
-        self.entry.bind("<FocusIn>", self._focus_in)
-        self.entry.bind("<FocusOut>", self._focus_out)
+        def verify():
+            # Compares the typed answer with the saved answer
+            # (ignores capital letters and extra spaces)
+            typed = answer_field.get().strip().lower()
+            saved = str(correct_answer).strip().lower()
 
-        # Auto-uppercase the first letter in restricted mode
-        if restrict:
-            self.entry.bind("<KeyRelease>", self._auto_capitalize)
+            if not typed:
+                messagebox.showwarning(
+                    "Security Verification", "Please enter your answer.", parent=popup
+                )
+                return
 
-        self._show_placeholder()
-        self._draw_eye()
+            if typed == saved:
+                # Correct -> now the password can really be changed
+                account["password"] = new_pass
+                self.save_data()
+                popup.destroy()
+                messagebox.showinfo(
+                    "Success", "Password has been reset successfully!",
+                    parent=parent_popup,
+                )
+                parent_popup.destroy()
+            else:
+                # Wrong -> failed attempt + lockout warning popup
+                popup.destroy()
+                parent_popup.destroy()
+                self.register_failed_attempt("Incorrect security answer.")
 
-    # ---------- restriction handling ----------
-    def _validate(self, proposed):
-        # MAIN COMMENT: Tk validation callback. Rejects keystrokes that would
-        # make the password too long or contain forbidden characters.
-        if self.has_placeholder:
-            return True
-        if len(proposed) > PASSWORD_MAX:
-            return False
-        return all(ch.isascii() and (ch.isalnum() or ch in "_-") for ch in proposed)
+        # ----- buttons -----
+        tk.Button(
+            popup, text="VERIFY", font=("Arial", 11, "bold"), fg="white",
+            bg=self.blue, activebackground="#087DDC", activeforeground="white",
+            relief="flat", cursor="hand2", command=verify,
+        ).pack(fill="x", padx=35, ipady=10)
 
-    def _auto_capitalize(self, event=None):
-        # MAIN COMMENT: Turns the first typed letter into uppercase
-        # while keeping the cursor where it was.
-        if self.has_placeholder:
-            return
-        text = self.entry.get()
-        if text and text[0].isalpha() and text[0].islower():
-            pos = self.entry.index(tk.INSERT)
-            self.entry.delete(0, 1)
-            self.entry.insert(0, text[0].upper())
-            self.entry.icursor(pos)
+        tk.Button(
+            popup, text="Cancel", font=("Arial", 10, "bold"), fg=self.text_blue,
+            bg="#DCEFFC", activebackground="#CBE9FA", relief="flat",
+            cursor="hand2", command=cancel,
+        ).pack(fill="x", padx=35, pady=(8, 0), ipady=5)
 
-    # ---------- placeholder handling ----------
-    def _show_placeholder(self):
-        # MAIN COMMENT: Puts the gray placeholder text into the entry.
-        self.has_placeholder = True
-        self.entry.delete(0, tk.END)
-        self.entry.insert(0, self.placeholder)
-        self.entry.config(fg=self.placeholder_fg, show="")
-
-    def _focus_in(self, event=None):
-        # MAIN COMMENT: When the user clicks the field, remove the placeholder
-        # and switch to normal text color.
-        if self.has_placeholder:
-            self.entry.delete(0, tk.END)
-            self.entry.config(fg=self.fg)
-            self.has_placeholder = False
-            self._apply_show()
-
-    def _focus_out(self, event=None):
-        # MAIN COMMENT: When the user leaves an empty field, bring the
-        # placeholder back.
-        if not self.has_placeholder and self.entry.get() == "":
-            self._show_placeholder()
-
-    # ---------- eye handling ----------
-    def _apply_show(self):
-        # MAIN COMMENT: Shows dots when hidden, real text when visible.
-        # The placeholder is never masked.
-        if self.has_placeholder:
-            self.entry.config(show="")
-        else:
-            self.entry.config(show="•" if self.hidden else "")
-
-    def toggle(self):
-        # MAIN COMMENT: Switches between hidden/visible password and
-        # redraws the eye icon.
-        self.hidden = not self.hidden
-        self._apply_show()
-        self._draw_eye()
-
-    def _draw_eye(self):
-        # MAIN COMMENT: Draws the eye icon. A slash through the eye means
-        # the password is currently hidden.
-        c = self.eye
-        col = self.eye_color
-        c.delete("all")
-
-        # almond-shaped eye outline
-        c.create_polygon(
-            2, 14, 8, 8, 14, 6, 20, 8, 26, 14, 20, 20, 14, 22, 8, 20,
-            smooth=True, fill="", outline=col, width=2,
-        )
-        # pupil
-        c.create_oval(10, 10, 18, 18, fill=col, outline="")
-
-        if self.hidden:
-            # closed eye = slash through the icon
-            c.create_line(5, 24, 24, 4, fill=self.bg, width=5)
-            c.create_line(5, 24, 24, 4, fill=col, width=2)
-
-    # ---------- public API ----------
-    def get(self):
-        # MAIN COMMENT: Returns the typed password ("" if only the
-        # placeholder is showing).
-        return "" if self.has_placeholder else self.entry.get()
-
-    def clear(self):
-        # MAIN COMMENT: Empties the field, restores the placeholder and
-        # hides the password again.
-        self._show_placeholder()
-        self.hidden = True
-        self._draw_eye()
+        # Pressing Enter inside the popup verifies the answer
+        popup.bind("<Return>", lambda e: verify())

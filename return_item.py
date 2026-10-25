@@ -115,6 +115,7 @@ class ReturnItemMixin:
                 break
 
         if found:
+            self.save_data()
             messagebox.showinfo(
                 "Borrowise",
                 f"Item status has been successfully updated to '{new_status}'.",

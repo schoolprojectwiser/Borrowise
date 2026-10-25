@@ -8,7 +8,7 @@ import tkinter as tk
 from datetime import datetime
 from tkinter import messagebox
 
-from config import DATE_FORMAT
+from config import DATE_FORMAT, ITEM_CHOICES, ITEM_HEADERS, ITEM_PLACEHOLDER
 
 
 class BorrowMixin:
@@ -41,15 +41,12 @@ class BorrowMixin:
         # Borrower name
         self.borrower_entry = self.create_entry_row(form, "Borrower Name:", "Enter name")
 
-        # Item dropdown
+        # Item dropdown (grouped by category)
         self.item_combo = self.create_combo_row(
-            form,
-            "Item Selection:",
-            [
-                "Select item", "Laptop", "Projector", "Keyboard", "Mouse",
-                "Calculator", "Monitor", "Extension Cord", "Speaker",
-            ],
+            form, "Item Selection:", ITEM_CHOICES, height=16
         )
+        self.last_item_choice = ITEM_PLACEHOLDER
+        self.item_combo.bind("<<ComboboxSelected>>", self.on_item_selected)
 
         # Quantity
         self.quantity_spin = self.create_spinbox_row(form, "Quantity:")
@@ -80,6 +77,16 @@ class BorrowMixin:
             command=self.clear_borrow_form,
         ).pack(side="left", padx=8)
 
+    def on_item_selected(self, event=None):
+        # MAIN COMMENT: Category headers are only labels. If one is picked
+        # (by click or mouse wheel), go back to the last real choice.
+        chosen = self.item_combo.get()
+        if chosen in ITEM_HEADERS:
+            self.item_combo.set(self.last_item_choice)
+        else:
+            self.last_item_choice = chosen
+        self.item_combo.selection_clear()
+
     def borrow_item(self):
         # MAIN COMMENT: Validates the Borrow form and, if everything is
         # correct, saves a new "Borrowed" record and shows the success popup.
@@ -102,9 +109,21 @@ class BorrowMixin:
             messagebox.showwarning("Borrowise", "Please enter the borrower name.")
             return
 
-        if item == "Select item":
+        if item == ITEM_PLACEHOLDER or item in ITEM_HEADERS:
             messagebox.showwarning("Borrowise", "Please select an item.")
             return
+
+        # Quantity must be a whole number from 1 to 20
+        try:
+            qty = int(quantity)
+        except ValueError:
+            qty = 0
+        if not 1 <= qty <= 20:
+            messagebox.showwarning(
+                "Borrowise", "Quantity must be a whole number from 1 to 20."
+            )
+            return
+        quantity = str(qty)
 
         # Expected return date must be a real date
         try:
@@ -163,6 +182,7 @@ class BorrowMixin:
 
         # Item and quantity
         self.item_combo.current(0)
+        self.last_item_choice = ITEM_PLACEHOLDER
         self.quantity_spin.delete(0, tk.END)
         self.quantity_spin.insert(0, "1")
 
